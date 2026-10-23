@@ -42,3 +42,6 @@ adb shell am start -n com.hguide.app/com.hguide.ui.MainActivity --ez autoplay tr
 `vehicle/ location/ navi/ speech/` Pleos Gateway · `engine/` TripDetector·DrivingEventEngine·TripContextClassifier·TripController · `family/` 동의·녹음·청크 처리 · `memory/` 하이라이트·클립·장소 재생 · `voice/` 등록·클론·인사·코치·우선순위 · `ai/` LlmProvider + `assets/prompts/*.md` · `data/` Room · `ui/` Compose · `demo/` 데모 콘솔.
 
 자세한 규칙과 제약은 [CLAUDE.md](CLAUDE.md), Pleos API 메모는 [docs/pleos-api-notes.md](docs/pleos-api-notes.md).
+
+## 라이선스
+All rights reserved — 공모전 심사용 열람·실행만 허용, 복제·수정·재사용·제출 금지. 자세한 내용은 [LICENSE](LICENSE).
