@@ -25,14 +25,14 @@ class CoachSpeaker(
     private val log: EventLog? = null,
     private val minGapMs: Long = 8_000,
 ) {
-    private var lastCueMs = Long.MIN_VALUE
+    private var lastCueMs = com.hguide.engine.NEVER
     private val lastByType = mutableMapOf<DrivingEventType, Long>()
 
     /** Returns the spoken text, or null if no cue was given (lesson off, rate-limited, or no voice configured). */
     suspend fun cue(type: DrivingEventType, tripId: Long, nowMs: Long): String? {
         if (!lesson.active.value) return null
         if (nowMs - lastCueMs < minGapMs) return null
-        if (nowMs - (lastByType[type] ?: Long.MIN_VALUE) < 20_000) return null
+        if (nowMs - (lastByType[type] ?: com.hguide.engine.NEVER) < 20_000) return null
         val personId = voiceOwner() ?: return null
         val person = people.get(personId) ?: return null
 

@@ -64,12 +64,15 @@ class SampleConversation(val name: String, val pcm: ByteArray, val segments: Lis
 class FakeDiarizationProvider(private val samples: List<SampleConversation>) : DiarizationProvider {
     override suspend fun diarize(audio: File): List<Segment> {
         val chunk = Wav.readPcm(audio)
-        val probe = chunk.copyOf(minOf(chunk.size, 4096))
-        if (probe.all { it.toInt() == 0 }) return emptyList()
+        // Chunks may start in silence, so anchor on the first non-silent stretch rather than the first bytes.
+        val firstSound = chunk.indexOfFirst { it.toInt() != 0 }
+        if (firstSound < 0) return emptyList()
+        val anchor = firstSound - firstSound % 2
+        val probe = chunk.copyOfRange(anchor, minOf(chunk.size, anchor + 4096))
         for (s in samples) {
-            val idx = indexOf(s.pcm, probe)
-            if (idx < 0) continue
-            val offMs = Wav.bytesToMs(idx)
+            val hit = indexOf(s.pcm, probe)
+            if (hit < 0 || hit < anchor) continue
+            val offMs = Wav.bytesToMs(hit - anchor)
             val endMs = offMs + Wav.bytesToMs(chunk.size)
             return s.segments.filter { it.startMs in offMs until endMs }
                 .map { it.copy(startMs = it.startMs - offMs, endMs = it.endMs - offMs) }

@@ -25,8 +25,9 @@ object Wav {
     }
 
     /** Reads the PCM payload of a WAV written by [write] (or any canonical 44-byte-header PCM16 file). */
-    fun readPcm(file: File): ByteArray {
-        val all = file.readBytes()
+    fun readPcm(file: File): ByteArray = readPcmBytes(file.readBytes())
+
+    fun readPcmBytes(all: ByteArray): ByteArray {
         require(all.size >= HEADER) { "not a wav" }
         // Walk chunks so extra header chunks (LIST etc.) are skipped.
         var pos = 12

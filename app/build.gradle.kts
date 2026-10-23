@@ -16,6 +16,9 @@ android {
         versionName = "0.1.0"
         // Fakes (LLM, diarization, voice clone, Pleos gateways) run the whole demo without a vehicle.
         buildConfigField("boolean", "USE_FAKES", "true")
+        // Fake Pleos gateways (vehicle/location/navi/speech) driven by the in-app demo console. Debug default: on.
+        // Release default: off (real Pleos SDK). Override: -PfakeGateways=true|false
+        buildConfigField("boolean", "USE_FAKE_GATEWAYS", (findProperty("fakeGateways") ?: "true").toString())
         // Pleos CONTROL-class permissions are only usable inside the approved scope; the app never needs them.
         buildConfigField("boolean", "ENABLE_CONTROL_PERMISSIONS", "false")
     }
@@ -24,7 +27,10 @@ android {
         debug { }
         release {
             isMinifyEnabled = false
+            // TODO(release): sign with the team keystore. Debug signing keeps the contest APK installable meanwhile.
+            signingConfig = signingConfigs.getByName("debug")
             buildConfigField("boolean", "USE_FAKES", "true") // TODO: flip to false once real vendors are wired
+            buildConfigField("boolean", "USE_FAKE_GATEWAYS", (findProperty("fakeGateways") ?: "false").toString())
         }
     }
 
@@ -40,6 +46,16 @@ android {
     composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
     testOptions { unitTests.isReturnDefaultValues = true }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+}
+
+// Demo audio + ground-truth labels live in /sample and are packaged as assets/sample/*.
+val syncSampleAssets by tasks.registering(Sync::class) {
+    from(rootProject.file("sample")) { include("*.wav", "*.json") }
+    into(layout.buildDirectory.dir("generated/sample-assets/sample"))
+}
+android.sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/sample-assets"))
+tasks.configureEach {
+    if (name.matches(Regex("merge.*Assets")) || name.contains("Lint", ignoreCase = true)) dependsOn(syncSampleAssets)
 }
 
 dependencies {

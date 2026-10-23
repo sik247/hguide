@@ -1,0 +1,28 @@
+{
+  "highlights": [
+    {
+      "conversation": "conversation1",
+      "speaker": "아빠",
+      "emotion": "proud",
+      "start_ms": 15163,
+      "contains": "잘했어"
+    },
+    {
+      "conversation": "conversation1",
+      "speaker": "아빠",
+      "emotion": "funny",
+      "start_ms": 32608,
+      "contains": "웃기게"
+    },
+    {
+      "conversation": "conversation2",
+      "speaker": "엄마",
+      "emotion": "proud",
+      "start_ms": 25012,
+      "contains": "대단하다"
+    }
+  ],
+  "must_exclude": [
+    "소리 지르게"
+  ]
+}

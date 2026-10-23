@@ -7,6 +7,9 @@ import com.hguide.core.GeoPoint
 import com.hguide.core.TurnSignal
 
 data class DifficultyZone(val name: String, val center: GeoPoint, val radiusM: Float)
+/** "Never happened" timestamp; half of MIN_VALUE so `now - NEVER` cannot overflow. */
+internal const val NEVER = Long.MIN_VALUE / 2
+
 data class RaisedEvent(val type: DrivingEventType, val ts: Long, val lat: Double, val lng: Double, val detail: String? = null)
 
 /**
@@ -23,9 +26,9 @@ class DrivingEventEngine(
 ) {
     private val window = ArrayDeque<Fix>()
     private var signalOn = false
-    private var signalLastOnMs = Long.MIN_VALUE
-    private var lastHarshMs = Long.MIN_VALUE
-    private var lastLaneMs = Long.MIN_VALUE
+    private var signalLastOnMs = NEVER
+    private var lastHarshMs = NEVER
+    private var lastLaneMs = NEVER
     private val insideZones = mutableSetOf<String>()
     var zones: List<DifficultyZone> = emptyList()
 

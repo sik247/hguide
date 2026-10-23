@@ -92,12 +92,13 @@ class MicAudioSource(@Suppress("unused") private val context: Context) : AudioSo
     override fun close() { runCatching { rec?.stop() }; runCatching { rec?.release() }; rec = null }
 }
 
-/** Demo/test source: plays back prepared PCM (looping), or silence. */
-class FakeAudioSource(private val pcm: ByteArray = ByteArray(0)) : AudioSource {
+/** Demo/test source: plays back prepared PCM (looping), or silence, paced at [paceFactor]x real time. */
+class FakeAudioSource(private val pcm: ByteArray = ByteArray(0), private val paceFactor: Double = 1.0) : AudioSource {
     private var pos = 0
     var closed = false
         private set
     override suspend fun read(ms: Long): ByteArray {
+        delay((ms / paceFactor).toLong().coerceAtLeast(1))
         val n = Wav.msToBytes(ms)
         if (pcm.isEmpty()) return ByteArray(n)
         val out = ByteArray(n)
