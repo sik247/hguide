@@ -106,7 +106,7 @@ class PlaceReplayController(
         if (!Phrases.isYes(answer)) { events?.add("🔇 추억 재생 안 함"); return }
         val file = File(clip.audioPath)
         if (!file.exists()) return
-        if (arbiter.play(SpeechRequest(SpeechPriority.MEMORY, file = file))) {
+        if (arbiter.play(SpeechRequest(SpeechPriority.MEMORY, file = file, caption = clip.title))) {
             clips.setLastPlayed(clip.id, clock.nowMs())
             events?.add("💛 추억 재생: ${clip.title}")
         }

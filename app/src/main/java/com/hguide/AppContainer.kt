@@ -7,7 +7,6 @@ import com.hguide.ai.PromptLibrary
 import com.hguide.audio.AndroidAudioPlayer
 import com.hguide.audio.AudioPlayer
 import com.hguide.audio.AudioSource
-import com.hguide.audio.FakeAudioPlayer
 import com.hguide.audio.FakeAudioSource
 import com.hguide.audio.MicAudioSource
 import com.hguide.audio.Wav
@@ -43,7 +42,10 @@ import com.hguide.navi.FakeNaviGateway
 import com.hguide.navi.NaviGateway
 import com.hguide.navi.PleosNaviGateway
 import com.hguide.speech.FakeSttGateway
-import com.hguide.speech.FakeTtsGateway
+import com.hguide.speech.DemoTtsGateway
+import com.hguide.speech.DemoVoices
+import com.hguide.speech.PlatformTts
+import com.hguide.speech.TypecastTts
 import com.hguide.speech.PleosSttGateway
 import com.hguide.speech.PleosTtsGateway
 import com.hguide.speech.SttGateway
@@ -54,6 +56,7 @@ import com.hguide.vehicle.VehicleGateway
 import com.hguide.voice.CoachSpeaker
 import com.hguide.voice.DiarizationProvider
 import com.hguide.voice.FakeDiarizationProvider
+import com.hguide.voice.DemoVoiceCloneProvider
 import com.hguide.voice.FakeVoiceCloneProvider
 import com.hguide.voice.FakeVoiceEmbedder
 import com.hguide.voice.GreetingSpeaker
@@ -96,20 +99,28 @@ class AppContainer(private val app: Application) {
     val fakeLocation = if (fakeGateways) FakeLocationGateway() else null
     val fakeNavi = if (fakeGateways) FakeNaviGateway() else null
     val fakeStt = if (fakeGateways) FakeSttGateway() else null
-    val fakeTts = if (fakeGateways) FakeTtsGateway(events) else null
+    /** Emulator demos speak through Android's TTS so a recording has sound; tests keep the silent fakes. */
+    private val platformTts by lazy { PlatformTts(app) }
+    private val typecast = TypecastTts(BuildConfig.TYPECAST_API_KEY, java.io.File(app.cacheDir, "typecast"))
+    private val demoVoices = DemoVoices(BuildConfig.TYPECAST_VOICE_DAD, BuildConfig.TYPECAST_VOICE_MOM, BuildConfig.TYPECAST_VOICE_GUIDE)
+    val fakeTts: TtsGateway? = if (fakeGateways) DemoTtsGateway(platformTts, events, typecast, demoVoices.guide, AndroidAudioPlayer()) else null
 
     val vehicle: VehicleGateway = fakeVehicle ?: PleosVehicleGateway(app)
     val location: LocationGateway = fakeLocation ?: PleosLocationGateway(app)
     val navi: NaviGateway = fakeNavi ?: PleosNaviGateway(app)
     val tts: TtsGateway = fakeTts ?: PleosTtsGateway(app)
     val stt: SttGateway = fakeStt ?: PleosSttGateway(app)
-    val player: AudioPlayer = if (fakeGateways) FakeAudioPlayer(events, playMs = 1500) else AndroidAudioPlayer()
+    val player: AudioPlayer = AndroidAudioPlayer()
 
     // ---- vendors (interface + Fake; real vendors plug in here) ----
     val llm: LlmProvider = if (fakeVendors) FakeLlmProvider() else NotConfiguredLlm()
     val diarizer: DiarizationProvider = if (fakeVendors) FakeDiarizationProvider(samples) else NotConfiguredDiarization()
     val embedder: VoiceEmbedder = if (fakeVendors) FakeVoiceEmbedder() else NotConfiguredEmbedder()
-    val clone: VoiceCloneProvider = if (fakeVendors) FakeVoiceCloneProvider(java.io.File(baseDir, "voice")) else NotConfiguredVoiceClone()
+    val clone: VoiceCloneProvider = when {
+        fakeVendors && fakeGateways -> DemoVoiceCloneProvider(FakeVoiceCloneProvider(java.io.File(baseDir, "voice")), platformTts, typecast, demoVoices)
+        fakeVendors -> FakeVoiceCloneProvider(java.io.File(baseDir, "voice"))
+        else -> NotConfiguredVoiceClone()
+    }
 
     // ---- core services ----
     private val chunkMs = 30_000L // spec F2: 30-second chunks
@@ -158,6 +169,7 @@ class AppContainer(private val app: Application) {
         )
         scope.launch {
             if (fakeVendors) DemoSeeder(this@AppContainer).seedIfEmpty()
+            if (fakeVendors && fakeGateways) DemoSeeder(this@AppContainer).seedMemories()
             privacy.purgeExpiredRawAudio()
             tripController.start()
             replay.start()

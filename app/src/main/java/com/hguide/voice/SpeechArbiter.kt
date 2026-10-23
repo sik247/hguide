@@ -14,6 +14,8 @@ data class SpeechRequest(
     val file: File? = null,
     /** Shown as the "AI 목소리" badge while playing. */
     val aiVoice: Boolean = false,
+    /** On-screen line for audio files (clone output, clips); text requests show [text]. */
+    val caption: String? = null,
 )
 
 /**
@@ -27,6 +29,9 @@ class SpeechArbiter(private val tts: TtsGateway, private val player: AudioPlayer
     private val _aiVoice = MutableStateFlow(false)
     /** UI badge: true while an AI-cloned voice is playing. */
     val aiVoice: StateFlow<Boolean> = _aiVoice.asStateFlow()
+    private val _speaking = MutableStateFlow<SpeechRequest?>(null)
+    /** What is playing right now (UI: driving caption, player state). */
+    val speaking: StateFlow<SpeechRequest?> = _speaking.asStateFlow()
     val busy get() = synchronized(lock) { current != null }
 
     suspend fun play(req: SpeechRequest): Boolean {
@@ -37,7 +42,7 @@ class SpeechArbiter(private val tts: TtsGateway, private val player: AudioPlayer
                 if (cur.priority.rank >= req.priority.rank) return false
                 tts.stop(); player.stop()
             }
-            current = token; currentReq = req; _aiVoice.value = req.aiVoice
+            current = token; currentReq = req; _aiVoice.value = req.aiVoice; _speaking.value = req
         }
         try {
             return when {
@@ -47,7 +52,7 @@ class SpeechArbiter(private val tts: TtsGateway, private val player: AudioPlayer
             }
         } finally {
             synchronized(lock) {
-                if (current === token) { current = null; currentReq = null; _aiVoice.value = false }
+                if (current === token) { current = null; currentReq = null; _aiVoice.value = false; _speaking.value = null }
             }
         }
     }

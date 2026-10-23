@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,53 +27,59 @@ fun DemoScreen(vm: MainViewModel) {
     val clips by vm.clips.collectAsStateWithLifecycle()
     val events by vm.events.collectAsStateWithLifecycle()
 
-    @Composable fun Row2(title: String, content: @Composable () -> Unit) = Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { content() }
-        }
+    @Composable fun Row2(title: String, content: @Composable () -> Unit) = Panel(Modifier.fillMaxWidth(), padding = 20.dp) {
+        Text(title, style = MaterialTheme.typography.titleMedium, color = Hg.Text)
+        Row(Modifier.padding(top = 10.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) { content() }
     }
+    @Composable fun B(text: String, primary: Boolean = false, onClick: () -> Unit) = GhostButton(text, onClick = onClick, color = if (primary) Hg.Amber else Hg.Text, height = 54.dp)
 
     Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("개발용 가상 콘솔 (Fake Pleos)", style = MaterialTheme.typography.titleLarge)
+        Text("개발용 가상 콘솔 (Fake Pleos)", style = MaterialTheme.typography.headlineMedium, color = Hg.Text)
+        Row2("시연 (녹화용)") {
+            B("▶ 자동 시연 30초", true) { vm.startAutoplay() }
+            B("① 초기화") { d.resetForDemo() }
+            B("② 아침 출발") { d.morningStart() }
+            B("③ 모두 \"응\"") { d.answerAllYes() }
+            B("④ 코칭 받기") { d.coachLaneChange() }
+            B("⑤ 추억 장소 지나기") { d.passMemory() }
+            B("⑥ 도착 · 주차") { d.arriveAndPark() }
+        }
         Row2("시간") {
-            OutlinedButton(onClick = { d.setTime(true, 8, 10) }) { Text("평일 08:10") }
-            OutlinedButton(onClick = { d.setTime(true, 18, 30) }) { Text("평일 18:30") }
-            OutlinedButton(onClick = { d.setTime(true, 22, 30) }) { Text("평일 22:30") }
-            OutlinedButton(onClick = { d.setTime(false, 11, 0) }) { Text("주말 11:00") }
+            B("평일 08:10") { d.setTime(true, 8, 10) }
+            B("평일 18:30") { d.setTime(true, 18, 30) }
+            B("평일 22:30") { d.setTime(true, 22, 30) }
+            B("주말 11:00") { d.setTime(false, 11, 0) }
         }
         Row2("위치 · 목적지") {
-            OutlinedButton(onClick = { d.teleport(DemoActions.HOME, "집") }) { Text("집") }
-            OutlinedButton(onClick = { d.teleport(DemoActions.WORK, "회사") }) { Text("회사") }
-            OutlinedButton(onClick = { d.setDestination(DemoActions.WORK, "회사") }) { Text("목적지=회사") }
-            OutlinedButton(onClick = { d.setDestination(null, null) }) { Text("목적지 해제") }
-            clips.take(6).forEach { c -> OutlinedButton(onClick = { d.teleport(GeoPoint(c.lat, c.lng), c.title) }) { Text("📍 ${c.title}") } }
+            B("집") { d.teleport(DemoActions.HOME, "집") }
+            B("회사") { d.teleport(DemoActions.WORK, "회사") }
+            B("목적지=회사") { d.setDestination(DemoActions.WORK, "회사") }
+            B("목적지 해제") { d.setDestination(null, null) }
+            clips.take(6).forEach { c -> B("📍 ${c.title}") { d.teleport(GeoPoint(c.lat, c.lng), c.title) } }
         }
         Row2("차량") {
-            Button(onClick = { d.gear(TripGear.DRIVE) }) { Text("주차 해제 (D)") }
-            OutlinedButton(onClick = { d.gear(TripGear.PARK) }) { Text("주차 (P)") }
-            OutlinedButton(onClick = { d.signal(TurnSignal.LEFT) }) { Text("좌 깜빡이") }
-            OutlinedButton(onClick = { d.signal(TurnSignal.RIGHT) }) { Text("우 깜빡이") }
-            OutlinedButton(onClick = { d.signal(TurnSignal.OFF) }) { Text("깜빡이 끔") }
+            B("주차 해제 (D)", true) { d.gear(TripGear.DRIVE) }
+            B("주차 (P)") { d.gear(TripGear.PARK) }
+            B("좌 깜빡이") { d.signal(TurnSignal.LEFT) }
+            B("우 깜빡이") { d.signal(TurnSignal.RIGHT) }
+            B("깜빡이 끔") { d.signal(TurnSignal.OFF) }
         }
         Row2("주행 시뮬레이션") {
-            OutlinedButton(onClick = { d.cruise() }) { Text("직진 5초") }
-            OutlinedButton(onClick = { d.laneChangeNoSignal() }) { Text("깜빡이 없이 진로 변경") }
-            OutlinedButton(onClick = { d.harshBrake() }) { Text("급감속") }
-            OutlinedButton(onClick = { d.enterMergeZone() }) { Text("합류 구간 진입") }
-            OutlinedButton(onClick = { d.startLesson(true) }) { Text("레슨 시작") }
-            OutlinedButton(onClick = { d.startLesson(false) }) { Text("레슨 종료") }
+            B("직진 5초") { d.cruise() }
+            B("깜빡이 없이 진로 변경") { d.laneChangeNoSignal() }
+            B("급감속") { d.harshBrake() }
+            B("합류 구간 진입") { d.enterMergeZone() }
+            B("레슨 시작") { d.startLesson(true) }
+            B("레슨 종료") { d.startLesson(false) }
         }
         Row2("차가 물을 때 대답하기 (음성 대체)") {
-            Button(onClick = { d.answer("응") }) { Text("\"응\"") }
-            OutlinedButton(onClick = { d.answer("아니") }) { Text("\"아니\"") }
-            OutlinedButton(onClick = { d.answer("기록 그만") }) { Text("\"기록 그만\"") }
+            B("\"응\"", true) { d.answer("응") }
+            B("\"아니\"") { d.answer("아니") }
+            B("\"기록 그만\"") { d.answer("기록 그만") }
         }
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(14.dp)) {
-                Text("로그", style = MaterialTheme.typography.titleMedium)
-                events.take(15).forEach { Text(it) }
-            }
+        Panel(Modifier.fillMaxWidth(), padding = 20.dp) {
+            Text("로그", style = MaterialTheme.typography.titleMedium, color = Hg.Text)
+            events.take(15).forEach { Label(it, style = MaterialTheme.typography.bodyMedium) }
         }
     }
 }

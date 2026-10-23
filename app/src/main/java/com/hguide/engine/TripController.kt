@@ -103,6 +103,9 @@ class TripController(
     /** Demo / manual: end the trip right now. */
     fun endTripNow() = handle(detector.onAppStop(clock.nowMs()))
 
+    /** Demo reset: forget the last recap banner. */
+    fun clearRecap() { _lastRecap.value = null }
+
     private fun handle(signal: TripSignal?) {
         when (signal) {
             is TripSignal.Started -> scope.launch { startTrip(signal) }

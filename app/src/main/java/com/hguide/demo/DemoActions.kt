@@ -24,6 +24,8 @@ class DemoActions(private val c: AppContainer) {
         val HOME = GeoPoint(37.4020, 127.1086)
         val WORK = GeoPoint(37.3948, 127.1112)
         val MERGE_ZONE = DifficultyZone("고속도로 합류 구간", GeoPoint(37.4100, 127.1086), 120f)
+        /** Where the seeded "아빠와 첫 드라이브" clip was recorded; [passMemory] drives past it. */
+        val MEMORY_SPOT = GeoPoint(37.4060, 127.1086)
     }
 
     private val clock = c.clock as OffsetClock
@@ -85,4 +87,62 @@ class DemoActions(private val c: AppContainer) {
     }
 
     fun startLesson(on: Boolean) { if (on) c.lesson.start("고속도로 합류 연습") else c.lesson.stop() }
+
+    // ---- one-tap steps for recording a demo video (in order) ----
+
+    /** ① Clean slate: trip ended, today's greeting/coaching forgotten, the demo playlist re-seeded, 평일 08:10 at home. */
+    fun resetForDemo() = c.scope.launch {
+        if (c.tripController.currentTripId.value != null) { gear(TripGear.PARK); c.tripController.endTripNow(); delay(1_500) }
+        c.family.stop(); c.lesson.stop(); signal(TurnSignal.OFF); c.arbiter.stopAll()
+        val db = c.db
+        db.memoryClipDao().all().forEach { java.io.File(it.audioPath).delete() }
+        db.memoryClipDao().deleteAll(); db.audioChunkDao().deleteAll(); db.greetingLogDao().deleteAll(); db.drivingEventDao().deleteAll()
+        java.io.File(c.baseDir, "audio").deleteRecursively()
+        DemoSeeder(c).seedMemories(force = true)
+        c.tripController.clearRecap()
+        setDestination(null, null)
+        setTime(true, 8, 10)
+        teleport(HOME, "집")
+        c.replay.sync(HOME)
+        c.events.add("🔄 시연 초기화")
+    }
+
+    /** ② Morning commute: 회사 destination, gear D → greeting in 아빠's AI voice, then the family-consent question. */
+    fun morningStart() {
+        setTime(true, 8, 10)
+        teleport(HOME, "집")
+        setDestination(WORK, "회사")
+        gear(TripGear.DRIVE)
+    }
+
+    /** ③ Answers "응" for every rider the car asks (stands in for each person saying yes). */
+    fun answerAllYes() = c.scope.launch {
+        repeat(6) {
+            if (c.family.state.value != com.hguide.core.FamilyState.ASKING) return@launch
+            val stt = c.fakeStt ?: return@launch
+            for (i in 0 until 100) { if (stt.listening.value) break; delay(100) }
+            delay(700) // let each "○○, 동의하시나요?" be read on screen
+            answer("응")
+            delay(250)
+        }
+    }
+
+    /** ④ Lane change without a signal, with the lesson on so 아빠's voice coaches it. */
+    fun coachLaneChange() { if (!c.lesson.active.value) startLesson(true); laneChangeNoSignal() }
+
+    /** ⑤ Drive past the place of a saved memory (lesson off: replay never interrupts a lesson). */
+    fun passMemory() = c.scope.launch {
+        startLesson(false); signal(TurnSignal.OFF)
+        pos = GeoPoint(MEMORY_SPOT.lat - 0.0025, MEMORY_SPOT.lng); heading = 0f
+        c.replay.sync(pos)
+        run(8, 35.0)
+    }
+
+    /** ⑥ Arrive at work and park: the trip ends and today's highlights are cut into new clips. */
+    fun arriveAndPark() = c.scope.launch {
+        teleport(WORK, "회사")
+        gear(TripGear.PARK)
+        delay(500)
+        c.tripController.endTripNow()
+    }
 }

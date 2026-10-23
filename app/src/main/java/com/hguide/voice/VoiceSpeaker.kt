@@ -21,7 +21,7 @@ class VoiceSpeaker(
             val synth = clone.synthesize(personId, text)
             val file = synth.getOrNull()
             if (file != null) {
-                val ok = arbiter.play(SpeechRequest(priority, file = file, aiVoice = true))
+                val ok = arbiter.play(SpeechRequest(priority, file = file, aiVoice = true, caption = text))
                 return Spoken(text, viaClone = true, played = ok, audioPath = file.path)
             }
             log("voice", "clone synthesis failed, falling back to default TTS")

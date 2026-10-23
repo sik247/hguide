@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -23,14 +25,25 @@ android {
         buildConfigField("boolean", "ENABLE_CONTROL_PERMISSIONS", "false")
     }
 
+    // Demo-recording voices (debug only). Key + voice ids live in the git-ignored local.properties:
+    // typecast.apiKey=… / typecast.voice.dad=… / typecast.voice.mom=… / typecast.voice.guide=…
+    val local = Properties().apply { rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) } }
+    fun localQuoted(key: String) = "\"" + (local.getProperty(key) ?: "") + "\""
+
     buildTypes {
-        debug { }
+        debug {
+            buildConfigField("String", "TYPECAST_API_KEY", localQuoted("typecast.apiKey"))
+            buildConfigField("String", "TYPECAST_VOICE_DAD", localQuoted("typecast.voice.dad"))
+            buildConfigField("String", "TYPECAST_VOICE_MOM", localQuoted("typecast.voice.mom"))
+            buildConfigField("String", "TYPECAST_VOICE_GUIDE", localQuoted("typecast.voice.guide"))
+        }
         release {
             isMinifyEnabled = false
             // TODO(release): sign with the team keystore. Debug signing keeps the contest APK installable meanwhile.
             signingConfig = signingConfigs.getByName("debug")
             buildConfigField("boolean", "USE_FAKES", "true") // TODO: flip to false once real vendors are wired
             buildConfigField("boolean", "USE_FAKE_GATEWAYS", (findProperty("fakeGateways") ?: "false").toString())
+            listOf("TYPECAST_API_KEY", "TYPECAST_VOICE_DAD", "TYPECAST_VOICE_MOM", "TYPECAST_VOICE_GUIDE").forEach { buildConfigField("String", it, "\"\"") }
         }
     }
 

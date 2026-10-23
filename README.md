@@ -20,6 +20,15 @@
 
 `-PfakeGateways=true|false`로 덮어쓸 수 있다. Pleos 에뮬레이터에서 실제 게이트웨이를 쓰려면 release 변형(또는 `-PfakeGateways=false`)을 설치.
 
+## 데모 영상
+[docs/demo/hguide-demo.mp4](docs/demo/hguide-demo.mp4) — 에뮬레이터 자동 시연(약 40초): 목소리 선택 → 운전 시작 → AI 인사 → 가족 동의 → 코칭 → 추억 장소 재생 → 주차 후 추억.
+
+자동 시연 다시 돌리기 (debug 빌드):
+```
+adb shell am start -n com.hguide.app/com.hguide.ui.MainActivity --ez autoplay true   # 또는 데모 탭 ▶ 자동 시연
+```
+에뮬레이터 데모 음성은 Typecast(`local.properties`에 `typecast.apiKey`, `typecast.voice.dad|mom|guide`)로 나오고, 키가 없으면 안드로이드 기본 TTS로 대신한다. 실제 차량 빌드는 Pleos TTS만 쓴다. 시드 추억 음성은 `sample/generate_demo_memories.py`로 만든다.
+
 ## 데모 (debug)
 앱의 **데모** 탭에서 시간·위치·기어·방향지시등·주행을 조작한다. 예) S1: `평일 08:10` → `집` → `주차 해제 (D)` → 인사가 나오고 가족 동의 질문이 이어진다. 차가 물어보면 데모 탭의 `"응"/"아니"`로 대답.
 샘플 대화(`sample/`)는 `python3 sample/generate_sample.py`(macOS)로 다시 만들 수 있다.

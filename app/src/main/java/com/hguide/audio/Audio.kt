@@ -22,6 +22,8 @@ interface AudioPlayer {
 
 class AndroidAudioPlayer : AudioPlayer {
     @Volatile private var mp: MediaPlayer? = null
+    /** Completes the in-flight [play] when [stop] is called (MediaPlayer fires no callback after release). */
+    @Volatile private var abort: (() -> Unit)? = null
 
     override suspend fun play(file: File): Boolean = withContext(Dispatchers.Main) {
         suspendCancellableCoroutine { cont ->
@@ -29,9 +31,10 @@ class AndroidAudioPlayer : AudioPlayer {
             mp = p
             fun finish(ok: Boolean) {
                 runCatching { p.release() }
-                if (mp === p) mp = null
+                if (mp === p) { mp = null; abort = null }
                 if (cont.isActive) cont.resume(ok)
             }
+            abort = { runCatching { p.stop() }; finish(false) }
             try {
                 p.setDataSource(file.absolutePath)
                 p.setOnCompletionListener { finish(true) }
@@ -43,7 +46,10 @@ class AndroidAudioPlayer : AudioPlayer {
         }
     }
 
-    override fun stop() { runCatching { mp?.stop() }; runCatching { mp?.release() }; mp = null }
+    override fun stop() {
+        val a = abort
+        if (a != null) a() else { runCatching { mp?.stop() }; runCatching { mp?.release() }; mp = null }
+    }
 }
 
 /** Logs instead of playing; keeps the demo running on an emulator without audio output. */

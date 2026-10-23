@@ -129,3 +129,24 @@ class FakeVoiceCloneProvider(private val dir: File) : VoiceCloneProvider {
         cacheDir(personId).deleteRecursively()
     }
 }
+
+/**
+ * Emulator-demo stand-in for a real clone vendor: same profile rules as [FakeVoiceCloneProvider] (no profile → failure),
+ * but the line is spoken by Typecast (per-person voice, when a key is configured) or the platform TTS at a per-person
+ * pitch instead of a beep, so a demo video has a voice.
+ */
+class DemoVoiceCloneProvider(
+    private val base: FakeVoiceCloneProvider,
+    private val tts: com.hguide.speech.PlatformTts,
+    private val voice: com.hguide.speech.TypecastTts? = null,
+    private val voices: com.hguide.speech.DemoVoices? = null,
+) : VoiceCloneProvider by base {
+    override suspend fun synthesize(personId: String, text: String): Result<File> {
+        if (!base.hasProfile(personId)) return base.synthesize(personId, text)
+        voices?.let { v -> voice?.toFile(text, v.forPerson(personId))?.let { return Result.success(it) } }
+        val out = File(base.cacheDir(personId), "tts_${text.hashCode().toUInt()}.wav")
+        if (out.exists() && out.length() > 0) return Result.success(out)
+        val pitch = when (personId) { "dad" -> 0.78f; "mom" -> 1.12f; else -> 1f }
+        return if (tts.toFile(text, pitch, out)) Result.success(out) else base.synthesize(personId, text)
+    }
+}

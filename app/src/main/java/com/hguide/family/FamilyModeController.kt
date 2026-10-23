@@ -36,6 +36,8 @@ class FamilyModeController(
 ) {
     private val _state = MutableStateFlow(FamilyState.OFF)
     val state: StateFlow<FamilyState> = _state.asStateFlow()
+    /** Rider whose answer is awaited right now (shown on the driving screen). */
+    val asking = MutableStateFlow<String?>(null)
     private val _prompt = MutableStateFlow<ConsentPrompt?>(null)
     val prompt: StateFlow<ConsentPrompt?> = _prompt.asStateFlow()
 
@@ -67,12 +69,14 @@ class FamilyModeController(
         for (p in riders) {
             if (_state.value != FamilyState.ASKING) return
             if (consent.answered(tripId, p.id) != null) continue
-            arbiter.play(SpeechRequest(SpeechPriority.GREETING, text = "${p.name}, 기록에 동의하시나요?"))
+            // Per-rider turn is on screen only ("아빠, 동의하시나요?"); just the opening question is spoken.
+            asking.value = p.id
             val answer = stt.listenForPhrase(answerTimeoutMs)
             if (consent.answered(tripId, p.id) != null) continue // answered on screen meanwhile
             // Silence or anything unclear counts as "no": consent must be explicit.
             respond(p.id, Phrases.isYes(answer))
         }
+        asking.value = null
     }
 
     private fun evaluate() {
