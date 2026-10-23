@@ -4,6 +4,11 @@
 
 동의 하에 대화를 기록 → 부모 목소리의 좋은 순간만 5–20초 클립으로 저장 → 그 장소를 지나가면 "들어볼까요?" 하고 묻고 재생 → 같은 목소리로 출퇴근 인사와 운전 레슨.
 
+
+https://github.com/user-attachments/assets/6b3db8d8-2777-4dc6-9b68-20884436b742
+
+<sub>에뮬레이터 자동 시연 (약 40초, 소리 있음): 목소리 선택 → 운전 시작 → AI 인사 → 가족 동의 → 코칭 → 추억 장소 재생 → 주차 후 추억</sub>
+
 ## 상태
 | | |
 |---|---|
@@ -21,7 +26,7 @@
 `-PfakeGateways=true|false`로 덮어쓸 수 있다. Pleos 에뮬레이터에서 실제 게이트웨이를 쓰려면 release 변형(또는 `-PfakeGateways=false`)을 설치.
 
 ## 데모 영상
-[docs/demo/hguide-demo.mp4](docs/demo/hguide-demo.mp4) — 에뮬레이터 자동 시연(약 40초): 목소리 선택 → 운전 시작 → AI 인사 → 가족 동의 → 코칭 → 추억 장소 재생 → 주차 후 추억.
+맨 위 영상의 원본: [docs/demo/hguide-demo.mp4](docs/demo/hguide-demo.mp4).
 
 자동 시연 다시 돌리기 (debug 빌드):
 ```
